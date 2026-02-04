@@ -23,7 +23,7 @@ struct AppState {
     base: Arc<Mutex<Qwen3TTS>>,
     voice_design: Arc<Mutex<Qwen3TTS>>,
     base_model_dir: String,
-    voice_design_model_dir: String,
+    _voice_design_model_dir: String,
     ffmpeg_path: String,
     semaphore: Arc<Semaphore>,
 }
@@ -460,7 +460,7 @@ async fn main() -> Result<(), ApiError> {
         base,
         voice_design: voice_design_model,
         base_model_dir,
-        voice_design_model_dir,
+        _voice_design_model_dir: voice_design_model_dir,
         ffmpeg_path,
         semaphore: Arc::new(Semaphore::new(max_concurrency)),
     });
