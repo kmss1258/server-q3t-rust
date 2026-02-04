@@ -1,0 +1,20 @@
+services:
+  tts-cpu:
+    image: ${CPU_IMAGE:-qwen3-tts-cpu}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE: ${CPU_BASE_IMAGE:-ubuntu:22.04}
+        FEATURES: ${CPU_FEATURES:-cli,server}
+    environment:
+      BASE_MODEL_DIR: ${BASE_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-Base}
+      VOICE_DESIGN_MODEL_DIR: ${VOICE_DESIGN_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign}
+      TOKENIZER_DIR: ${TOKENIZER_DIR:-/models/tokenizer}
+      DEVICE: cpu
+      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-1}
+    volumes:
+      - ${MODEL_ROOT:-./models}:/models:ro
+    ports:
+      - ${HTTP_PORT:-8000}:8000
+    restart: unless-stopped

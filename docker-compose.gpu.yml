@@ -1,0 +1,59 @@
+services:
+  tts-gpu-0:
+    image: ${GPU_IMAGE:-qwen3-tts-gpu}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE: ${GPU_BASE_IMAGE:-nvcr.io/nvidia/pytorch:25.11-py3}
+        FEATURES: ${GPU_FEATURES:-flash-attn,cli,server}
+        CUDA_COMPUTE_CAP: ${CUDA_COMPUTE_CAP:-90}
+    environment:
+      BASE_MODEL_DIR: ${BASE_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-Base}
+      VOICE_DESIGN_MODEL_DIR: ${VOICE_DESIGN_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign}
+      TOKENIZER_DIR: ${TOKENIZER_DIR:-/models/tokenizer}
+      DEVICE: cuda
+      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-1}
+      NVIDIA_VISIBLE_DEVICES: "0"
+    volumes:
+      - ${MODEL_ROOT:-./models}:/models:ro
+    device_requests:
+      - driver: nvidia
+        device_ids: ["0"]
+        capabilities: [gpu]
+    restart: unless-stopped
+
+  tts-gpu-2:
+    image: ${GPU_IMAGE:-qwen3-tts-gpu}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE: ${GPU_BASE_IMAGE:-nvcr.io/nvidia/pytorch:25.11-py3}
+        FEATURES: ${GPU_FEATURES:-flash-attn,cli,server}
+        CUDA_COMPUTE_CAP: ${CUDA_COMPUTE_CAP:-90}
+    environment:
+      BASE_MODEL_DIR: ${BASE_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-Base}
+      VOICE_DESIGN_MODEL_DIR: ${VOICE_DESIGN_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign}
+      TOKENIZER_DIR: ${TOKENIZER_DIR:-/models/tokenizer}
+      DEVICE: cuda
+      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-1}
+      NVIDIA_VISIBLE_DEVICES: "2"
+    volumes:
+      - ${MODEL_ROOT:-./models}:/models:ro
+    device_requests:
+      - driver: nvidia
+        device_ids: ["2"]
+        capabilities: [gpu]
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - tts-gpu-0
+      - tts-gpu-2
+    ports:
+      - ${HTTP_PORT:-8000}:8000
+    volumes:
+      - ./nginx-gpu.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
