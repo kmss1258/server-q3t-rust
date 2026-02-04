@@ -53,7 +53,7 @@ services:
       - tts-gpu-0
       - tts-gpu-2
     ports:
-      - ${HTTP_PORT:-8000}:8000
+      - ${HTTP_PORT:-19160}:8000
     volumes:
       - ./nginx-gpu.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
