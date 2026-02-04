@@ -65,7 +65,9 @@ RUN cp target/release/generate_audio /usr/local/bin/ \
 # Install uv + Whisper for audio intelligibility testing
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
-RUN uv pip install --system --no-cache openai-whisper scipy flash-attn
+ARG INSTALL_FLASH_ATTN=0
+RUN uv pip install --system --no-cache openai-whisper scipy
+RUN if [ "${INSTALL_FLASH_ATTN}" = "1" ]; then uv pip install --system --no-cache flash-attn; fi
 
 # Copy example audio and whisper transcribe script
 RUN mkdir -p /examples/data \
