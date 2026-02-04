@@ -1,6 +1,6 @@
 # Dockerfile for qwen3-tts
 #
-# Uses the NGC PyTorch container which includes CUDA 13.0 toolkit,
+# Uses the NGC PyTorch container which includes CUDA 12.2 toolkit,
 # cuDNN, and NCCL — matching the validated build environment.
 #
 # Build:
@@ -30,7 +30,7 @@
 # CPU-only build (smaller, no CUDA):
 #   docker build --build-arg FEATURES=cli --build-arg BASE=ubuntu:22.04 -t qwen3-tts-cpu .
 
-ARG BASE=nvcr.io/nvidia/pytorch:25.11-py3
+ARG BASE=nvcr.io/nvidia/pytorch:23.10-py3
 
 FROM ${BASE}
 
@@ -49,8 +49,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 ARG FEATURES=flash-attn,cli,server
 
 # CUDA compute capability for bindgen_cuda (nvidia-smi unavailable during build).
-# 90 = SM_90 (Hopper GH200). Override with --build-arg CUDA_COMPUTE_CAP=89 etc.
-ARG CUDA_COMPUTE_CAP=90
+# 86 = SM_86 (RTX 3090). Override with --build-arg CUDA_COMPUTE_CAP=89 etc.
+ARG CUDA_COMPUTE_CAP=86
 ENV CUDA_COMPUTE_CAP=${CUDA_COMPUTE_CAP}
 
 WORKDIR /build

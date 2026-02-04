@@ -35,7 +35,7 @@ All code in this repo was written with [Claude Code](https://claude.ai/code). Th
 - Improved tokenizer path resolution with explicit `--tokenizer-dir` override
 - Added benchmarking suite (Criterion micro-benchmarks + E2E speed tests)
 - Automatic resampling of reference audio to 24kHz for voice cloning
-- Docker base image updated to NGC pytorch:25.11 (CUDA 13.0)
+- Docker base image updated to NGC pytorch:23.10 (CUDA 12.2)
 
 Thanks to [u/rngesius](https://www.reddit.com/r/LocalLLaMA/comments/1qqvb79/comment/o2nv6qm/) for feedback on playback speed and tokenizer issues.
 

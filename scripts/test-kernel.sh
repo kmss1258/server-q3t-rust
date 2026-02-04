@@ -17,7 +17,7 @@ fi
 
 TEST_FILTER="$1"
 CONTAINER_NAME="qwen3-tts-kernel-test-$$"
-BASE_IMAGE="nvcr.io/nvidia/pytorch:25.11-py3"
+BASE_IMAGE="nvcr.io/nvidia/pytorch:23.10-py3"
 
 cleanup() {
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true

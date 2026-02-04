@@ -27,7 +27,7 @@ if [ "$MODE" = "cpu" ]; then
     BASE_IMAGE="ubuntu:22.04"
     GPU_ARGS=""
 else
-    BASE_IMAGE="nvcr.io/nvidia/pytorch:25.11-py3"
+    BASE_IMAGE="nvcr.io/nvidia/pytorch:23.10-py3"
     GPU_ARGS="--gpus all"
 fi
 
