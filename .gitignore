@@ -1,1 +1,6 @@
 /models
+# z_original_source/qwen3-tts-rs/
+voice_clone.mp3
+voice_design.mp3
+voice_design.wav
+prompt.json

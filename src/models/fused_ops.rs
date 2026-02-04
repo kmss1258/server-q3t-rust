@@ -6,6 +6,7 @@
 use anyhow::Result;
 use candle_core::{Module, Tensor};
 use candle_nn::{rms_norm, RmsNorm, VarBuilder};
+use std::sync::OnceLock;
 
 /// RMSNorm that supports fused residual addition on CUDA.
 ///
@@ -18,6 +19,15 @@ pub struct FusedRmsNorm {
     weight: Tensor,
     #[cfg(feature = "cuda")]
     eps: f32,
+}
+
+fn fused_rmsnorm_enabled() -> bool {
+    static DISABLED: OnceLock<bool> = OnceLock::new();
+    !*DISABLED.get_or_init(|| {
+        std::env::var("DISABLE_FUSED_RMSNORM")
+            .map(|value| matches!(value.as_str(), "1" | "true" | "TRUE"))
+            .unwrap_or(false)
+    })
 }
 
 impl FusedRmsNorm {
@@ -49,7 +59,7 @@ impl FusedRmsNorm {
     pub fn forward_residual(&self, x: &Tensor, residual: &Tensor) -> Result<(Tensor, Tensor)> {
         #[cfg(feature = "cuda")]
         {
-            if x.device().is_cuda() {
+            if x.device().is_cuda() && fused_rmsnorm_enabled() {
                 return self.forward_residual_fused(x, residual);
             }
         }
