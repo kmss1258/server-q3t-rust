@@ -96,12 +96,12 @@ payload = {
 print(json.dumps(payload))
 PY
 
-curl -s -X POST "$URL/v1/audio/voice-clone" \
+curl -s -X POST "$URL/v1/audio/voice-clone/prompted" \
   -H "Content-Type: application/json" \
   -d @/tmp/payload_icl.json \
   -o /tmp/out_icl.mp3
 
-curl -s -X POST "$URL/v1/audio/voice-clone" \
+curl -s -X POST "$URL/v1/audio/voice-clone/prompted" \
   -H "Content-Type: application/json" \
   -d @/tmp/payload_xv.json \
   -o /tmp/out_xv.mp3

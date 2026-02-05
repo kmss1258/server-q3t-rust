@@ -57,6 +57,7 @@ rayon = "1.10"             # Parallel CPU processing
 byteorder = "1.5"
 num-traits = "0.2"
 num-complex = "0.4"
+base64 = "0.22"
 
 # HTTP server (optional)
 axum = { version = "0.7", features = ["json", "multipart"], optional = true }

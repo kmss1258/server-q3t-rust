@@ -14,6 +14,14 @@ services:
       TOKENIZER_DIR: ${TOKENIZER_DIR:-/models/tokenizer}
       DEVICE: cuda
       MAX_CONCURRENCY: ${MAX_CONCURRENCY:-1}
+      DISABLE_FUSED_RMSNORM: "1"
+      ICL_NON_STREAMING: "1"
+      AUTO_REF_TEXT: "1"
+      TRANSCRIBE_PATH: /usr/local/bin/transcribe.py
+      WHISPER_MODEL: "tiny"
+      WHISPER_LANGUAGE: "auto"
+      PROMPT_INCLUDE_REF_AUDIO: "1"
+      VOICE_DESIGN_MIN_DURATION_SECONDS: "8"
       NVIDIA_VISIBLE_DEVICES: "0"
     volumes:
       - ${MODEL_ROOT:-./models}:/models:ro
@@ -53,32 +61,32 @@ services:
 #              capabilities: [gpu]
 #    restart: unless-stopped
 
-  tts-gpu-2:
-    image: ${GPU_IMAGE:-qwen3-tts-gpu}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        BASE: ${GPU_BASE_IMAGE:-nvcr.io/nvidia/pytorch:23.10-py3}
-        FEATURES: ${GPU_FEATURES:-flash-attn,cli,server}
-        CUDA_COMPUTE_CAP: ${CUDA_COMPUTE_CAP:-86}
-    environment:
-      BASE_MODEL_DIR: ${BASE_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-Base}
-      VOICE_DESIGN_MODEL_DIR: ${VOICE_DESIGN_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign}
-      TOKENIZER_DIR: ${TOKENIZER_DIR:-/models/tokenizer}
-      DEVICE: cuda
-      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-1}
-      NVIDIA_VISIBLE_DEVICES: "2"
-    volumes:
-      - ${MODEL_ROOT:-./models}:/models:ro
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ["2"]
-              capabilities: [gpu]
-    restart: unless-stopped
+#  tts-gpu-2:
+#    image: ${GPU_IMAGE:-qwen3-tts-gpu}
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#      args:
+#        BASE: ${GPU_BASE_IMAGE:-nvcr.io/nvidia/pytorch:23.10-py3}
+#        FEATURES: ${GPU_FEATURES:-flash-attn,cli,server}
+#        CUDA_COMPUTE_CAP: ${CUDA_COMPUTE_CAP:-86}
+#    environment:
+#      BASE_MODEL_DIR: ${BASE_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-Base}
+#      VOICE_DESIGN_MODEL_DIR: ${VOICE_DESIGN_MODEL_DIR:-/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign}
+#      TOKENIZER_DIR: ${TOKENIZER_DIR:-/models/tokenizer}
+#      DEVICE: cuda
+#      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-1}
+#      NVIDIA_VISIBLE_DEVICES: "2"
+#    volumes:
+#      - ${MODEL_ROOT:-./models}:/models:ro
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              device_ids: ["2"]
+#              capabilities: [gpu]
+#    restart: unless-stopped
 
 #  tts-gpu-3:
 #    image: ${GPU_IMAGE:-qwen3-tts-gpu}
@@ -111,7 +119,7 @@ services:
     image: nginx:1.27-alpine
     depends_on:
       - tts-gpu-0
-      - tts-gpu-2
+#      - tts-gpu-2
 #      - tts-gpu-1
 #      - tts-gpu-3
     ports:

@@ -116,14 +116,37 @@ impl Encoder12Hz {
     /// Input: `AudioBuffer` at 24kHz.
     /// Output: `Tensor` of shape `[T_frames, 16]` containing discrete codes (u32).
     pub fn encode(&self, audio: &AudioBuffer) -> Result<Tensor> {
-        let samples = &audio.samples;
+        let mut samples = audio.samples.as_slice();
+        const SAMPLE_RATE: usize = 24000;
+        const SEANET_RATIO: usize = 8 * 6 * 5 * 4;
+        const T_25HZ_CHUNK: usize = 200;
+        const SAMPLES_PER_FRAME: usize = SAMPLE_RATE / SEANET_RATIO;
+        const SAMPLE_CHUNK: usize = SAMPLES_PER_FRAME * T_25HZ_CHUNK;
+        if samples.len() >= SAMPLE_CHUNK {
+            let trimmed = samples.len() - (samples.len() % SAMPLE_CHUNK);
+            if trimmed > 0 && trimmed < samples.len() {
+                samples = &samples[..trimmed];
+            }
+        }
 
         // Mimi expects [batch, channels, samples] = [1, 1, N]
         let input = Tensor::from_vec(samples.to_vec(), (1, 1, samples.len()), &self.device)?;
         let input = input.to_dtype(DType::F32)?;
 
         // SEANet encoder: [1, 1, N] → [1, 512, T_25hz]
-        let xs = self.encoder.forward(&input)?;
+        let mut xs = self.encoder.forward(&input)?;
+
+        // Ensure the streaming transformer sees full chunks only.
+        // Some Mimi checkpoints assume a fixed chunk length (200), and
+        // partial tails can trigger narrow() bounds errors.
+        const TRANSFORMER_CHUNK: usize = 200;
+        let t_25hz = xs.dim(2)?;
+        if t_25hz >= TRANSFORMER_CHUNK {
+            let trimmed = t_25hz - (t_25hz % TRANSFORMER_CHUNK);
+            if trimmed > 0 && trimmed < t_25hz {
+                xs = xs.narrow(2, 0, trimmed)?;
+            }
+        }
 
         // Transformer: [1, 512, T_25hz] → [1, T_25hz, 512] (conv_layout transposes internally)
         let mut transformer = self.encoder_transformer.borrow_mut();

@@ -87,7 +87,11 @@ def main():
         choices=["tiny", "base", "small", "medium", "large-v3"],
         help="Whisper model size (default: large-v3). Use large-v3 for TTS evaluation.",
     )
-    parser.add_argument("--language", default="en", help="Language hint (default: en)")
+    parser.add_argument(
+        "--language",
+        default="auto",
+        help="Language hint (default: auto). Use auto for language detection.",
+    )
     parser.add_argument("--expected", default=None, help="Expected transcription for WER")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
@@ -104,7 +108,8 @@ def main():
             results.append({"file": path, "error": str(e)})
             continue
 
-        result = model.transcribe(audio, language=args.language)
+        language = None if args.language in ("auto", "none", "") else args.language
+        result = model.transcribe(audio, language=language)
         text = result["text"].strip()
 
         name = path.split("/")[-1]
@@ -114,6 +119,7 @@ def main():
             **stats,
         }
 
+        wer = None
         if args.expected:
             wer = word_error_rate(args.expected, text)
             entry["wer"] = wer
@@ -129,7 +135,7 @@ def main():
         print(f"  rms: {stats['rms']:.4f}")
         print(f"  peak: {stats['peak']:.4f}")
         print(f"  silence: {stats['silence']:.1%}")
-        if args.expected:
+        if args.expected and wer is not None:
             print(f"  wer: {wer:.1%}")
         print()
 

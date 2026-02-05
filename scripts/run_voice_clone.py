@@ -77,7 +77,7 @@ def main() -> None:
         "options": {"duration_seconds": 15},
         "prompt": prompt["prompt"],
     }
-    post_json("/v1/audio/voice-clone", clone_payload, VOICE_CLONE_MP3)
+    post_json("/v1/audio/voice-clone/prompted", clone_payload, VOICE_CLONE_MP3)
 
 
 if __name__ == "__main__":

@@ -93,8 +93,9 @@ All endpoints return `audio/mpeg` (MP3) unless noted.
 | Method | Path | Description | Request type |
 | --- | --- | --- | --- |
 | POST | `/v1/audio/voice-design` | VoiceDesign synthesis from text + instruct | JSON |
+| POST | `/v1/audio/voice-clone` | Direct voice clone (ref_audio + optional ref_text) | multipart/form-data |
 | POST | `/v1/audio/voice-clone/prompt` | Build reusable prompt (speaker + ICL codes) | multipart/form-data |
-| POST | `/v1/audio/voice-clone` | Base voice clone using a saved prompt | JSON |
+| POST | `/v1/audio/voice-clone/prompted` | Voice clone using a saved prompt | JSON |
 
 ### Flow (Design → Clone)
 
@@ -102,8 +103,7 @@ All endpoints return `audio/mpeg` (MP3) unless noted.
 client
   | POST /v1/audio/voice-design (text + instruct)  --> mp3
   | mp3 -> wav (ffmpeg)
-  | POST /v1/audio/voice-clone/prompt (ref_audio + ref_text) --> prompt JSON
-  | POST /v1/audio/voice-clone (text + prompt) --> mp3
+  | POST /v1/audio/voice-clone (ref_audio + ref_text + text) --> mp3
 ```
 
 ### Request schemas
@@ -126,13 +126,21 @@ client
 }
 ```
 
+**Voice Clone (direct, multipart/form-data)**
+
+- `ref_audio`: WAV file (required)
+- `ref_text`: transcript text (optional, recommended for ICL)
+- `text`: target text (required)
+- `language`: optional
+- `x_vector_only`: `true`/`1` to skip ICL codes
+
 **Voice Clone Prompt (multipart/form-data)**
 
 - `ref_audio`: WAV file (required)
 - `ref_text`: transcript text (optional, recommended for ICL)
 - `x_vector_only`: `true`/`1` to skip ICL codes
 
-**Voice Clone**
+**Voice Clone (prompted)**
 
 ```json
 {
@@ -167,13 +175,24 @@ curl -X POST http://localhost:8010/v1/audio/voice-clone/prompt \
   -o prompt.json
 ```
 
-**Voice Clone → mp3**
+**Voice Clone (prompted) → mp3**
 
 ```bash
-curl -X POST http://localhost:8010/v1/audio/voice-clone \
+curl -X POST http://localhost:8010/v1/audio/voice-clone/prompted \
   -H "Content-Type: application/json" \
   -d "$(jq -c --arg text '오빠.. 나 당장 갈 것 같아.. 빨리 와줬으면 좋겠어. 부탁이야.' '{text:$text, language:"korean", options:{duration_seconds:15}, prompt:.prompt}' prompt.json)" \
   -o voice_clone.mp3
+
+**Voice Clone (direct) → mp3**
+
+```bash
+curl -X POST http://localhost:8010/v1/audio/voice-clone \
+  -F "ref_audio=@voice_design.wav" \
+  -F "ref_text=오빠.. 나 당장 갈 것 같아.. 빨리 와줬으면 좋겠어. 부탁이야." \
+  -F "text=오빠.. 나 당장 갈 것 같아.. 빨리 와줬으면 좋겠어. 부탁이야." \
+  -F "language=korean" \
+  -o voice_clone.mp3
+```
 ```
 
 ## Performance

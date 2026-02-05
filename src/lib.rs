@@ -928,6 +928,21 @@ impl Qwen3TTS {
         gen_config.max_new_tokens = max_new_tokens;
         gen_config.repetition_penalty = repetition_penalty;
 
+        let icl_len_estimate = if is_icl {
+            let ref_codes = prompt.ref_codes.as_ref().expect("ref_codes missing in ICL");
+            let ref_frames = ref_codes.dim(0)?;
+            let n_codec = ref_frames + 1;
+            let ref_text_len = prompt
+                .ref_text_ids
+                .as_ref()
+                .expect("ref_text_ids missing in ICL")
+                .len();
+            let n_text = ref_text_len + input_ids.len() + 1;
+            n_text.max(n_codec)
+        } else {
+            0
+        };
+
         // Cast speaker embedding to compute dtype (speaker encoder produces F32)
         let speaker_embed = prompt.speaker_embedding.to_dtype(self.compute_dtype)?;
 
@@ -935,7 +950,8 @@ impl Qwen3TTS {
         #[cfg(feature = "profiling")]
         let _prefill_span = tracing::info_span!("prefill").entered();
 
-        let mut kv_caches = self.talker.new_kv_caches(gen_config.max_new_tokens + 256);
+        let kv_max_seq = gen_config.max_new_tokens + 256 + icl_len_estimate + 16;
+        let mut kv_caches = self.talker.new_kv_caches(kv_max_seq);
         let (hidden, logits) = self.talker.prefill_voice_clone(
             &input_ids,
             &speaker_embed,
@@ -959,9 +975,12 @@ impl Qwen3TTS {
             // text_id=input_id[:, 3:-5] passes ALL target text tokens).
             // In the non-ICL path the first text token is consumed by the prefill,
             // so only the remaining tokens go to trailing_text.
-            let (icl_embed, icl_trailing) =
-                self.talker
-                    .build_icl_prompt(&input_ids, ref_text_ids, &ref_codec_embeds, false)?;
+            let non_streaming = std::env::var("ICL_NON_STREAMING")
+                .map(|value| matches!(value.as_str(), "1" | "true" | "TRUE"))
+                .unwrap_or(false);
+            let (icl_embed, icl_trailing) = self
+                .talker
+                .build_icl_prompt(&input_ids, ref_text_ids, &ref_codec_embeds, non_streaming)?;
 
             let icl_len = icl_embed.dim(1)?;
             if icl_len > 0 {
@@ -1394,6 +1413,12 @@ pub fn codes_to_tensor(codes: &[Vec<u32>], device: &Device) -> Result<Tensor> {
 ///
 /// Returns `BF16` for CUDA/Metal (lower memory, faster attention) and `F32` for CPU.
 pub fn compute_dtype_for_device(device: &Device) -> DType {
+    let force_f32 = std::env::var("FORCE_F32")
+        .map(|value| matches!(value.as_str(), "1" | "true" | "TRUE"))
+        .unwrap_or(false);
+    if force_f32 {
+        return DType::F32;
+    }
     if device.is_cuda() || device.is_metal() {
         DType::BF16
     } else {
